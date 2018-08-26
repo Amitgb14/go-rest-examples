@@ -122,7 +122,8 @@ func (a *App) addFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := xml.Unmarshal(body, &user); err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		respondWithJson(w, http.StatusBadRequest,
+			map[string]interface{}{"error_code": -1001, "error_msg": err.Error()})
 		return
 	}
 	defer r.Body.Close()
