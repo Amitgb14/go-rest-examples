@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -34,4 +35,28 @@ func TestUser(t *testing.T) {
 	checkReponseCode(t, http.StatusOK, response.Code)
 	// var m map[string]interface{}
 	// json.Unmarshal(response.Body.Bytes(), &m)
+}
+
+func TestAddUser(t *testing.T) {
+	payload := []byte(`{"ID": 3, "Name": "Ankit", "Age": 21}`)
+	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(payload))
+	response := executeRequest(req)
+
+	checkReponseCode(t, http.StatusCreated, response.Code)
+
+}
+
+func TestAddFile(t *testing.T) {
+
+	data := []byte(`
+	<Data>
+		<ID>4</ID>
+		<Name>Grace R. Emlin</Name>
+		<Age>35</Age>
+	</Data>`)
+	req, _ := http.NewRequest("POST", "/file", bytes.NewBuffer(data))
+	response := executeRequest(req)
+
+	checkReponseCode(t, http.StatusCreated, response.Code)
+
 }

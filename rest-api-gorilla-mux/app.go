@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -84,7 +87,55 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (a *App) addUser(w http.ResponseWriter, r *http.Request) {
+	var user User
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&user); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer r.Body.Close()
+
+	users[user.ID] = User{ID: user.ID, Name: user.Name, Age: user.Age}
+	// fmt.Println(user.ID)
+	respondWithJson(w, http.StatusCreated, map[string]string{"msg": "Successfully added"})
+
+}
+
+func (a *App) addFile(w http.ResponseWriter, r *http.Request) {
+
+	// type Result struct {
+	// 	ID   int    `xml:"ID"`
+	// 	Name string `xml:"Name"`
+	// 	Age  int    `xml:"Name"`
+	// }
+	// v := Result{}
+
+	var user User
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	if err := r.Body.Close(); err != nil {
+		panic(err)
+	}
+
+	if err := xml.Unmarshal(body, &user); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	users[user.ID] = User{ID: user.ID, Name: user.Name, Age: user.Age}
+	// fmt.Println(user.ID)
+	respondWithJson(w, http.StatusCreated, map[string]string{"msg": "Successfully added"})
+
+}
+
 func (a *App) initializeRouters() {
-	a.Router.HandleFunc("/user/{id:[0-9]+}", a.getUser).Methods("GET")
 	a.Router.HandleFunc("/users", a.getUsers).Methods("GET")
+	a.Router.HandleFunc("/user/{id:[0-9]+}", a.getUser).Methods("GET")
+	a.Router.HandleFunc("/user", a.addUser).Methods("POST")
+	a.Router.HandleFunc("/file", a.addFile).Methods("POST")
 }
