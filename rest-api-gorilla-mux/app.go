@@ -55,10 +55,7 @@ func getUsers() (map[int]User, error) {
 }
 
 func getUser(id int) (User, error) {
-	user := map[int]User{}
-	user[1] = User{ID: 1, Name: "Amit", Age: 28}
-	user[2] = User{ID: 2, Name: "Rohit", Age: 30}
-	if value, ok := user[id]; ok {
+	if value, ok := users[id]; ok {
 		return value, nil
 	}
 	return User{}, errors.New("")
