@@ -1,0 +1,93 @@
+package main
+
+import (
+	"encoding/json"
+	"errors"
+	"log"
+	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
+)
+
+type App struct {
+	Router *mux.Router
+}
+
+type User struct {
+	ID   int
+	Name string
+	Age  int
+}
+
+var users map[int]User
+
+func (a *App) Initialize() {
+	a.Router = mux.NewRouter()
+	a.initializeRouters()
+}
+
+func (a *App) Run(address string) {
+	log.Fatal(http.ListenAndServe(address, a.Router))
+}
+
+func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
+	response, _ := json.Marshal(payload)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response)
+}
+
+func respondWithError(w http.ResponseWriter, code int, message string) {
+	respondWithJson(w, code, map[string]string{"error": message})
+}
+
+func init() {
+	users = map[int]User{
+		1: User{ID: 1, Name: "Amit", Age: 28},
+		2: User{ID: 2, Name: "Rohit", Age: 30},
+	}
+
+}
+func getUsers() (map[int]User, error) {
+	return users, errors.New("")
+}
+
+func getUser(id int) (User, error) {
+	user := map[int]User{}
+	user[1] = User{ID: 1, Name: "Amit", Age: 28}
+	user[2] = User{ID: 2, Name: "Rohit", Age: 30}
+	if value, ok := user[id]; ok {
+		return value, nil
+	}
+	return User{}, errors.New("")
+}
+
+func (a *App) getUsers(w http.ResponseWriter, r *http.Request) {
+
+	users, _ := getUsers()
+	respondWithJson(w, http.StatusOK, users)
+
+}
+
+func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid User ID")
+		return
+	}
+	user, err := getUser(id)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "User ID not Found")
+		return
+	}
+	respondWithJson(w, http.StatusOK, user)
+
+}
+
+func (a *App) initializeRouters() {
+	a.Router.HandleFunc("/user/{id:[0-9]+}", a.getUser).Methods("GET")
+	a.Router.HandleFunc("/users", a.getUsers).Methods("GET")
+}
